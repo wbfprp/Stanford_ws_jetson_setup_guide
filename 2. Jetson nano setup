@@ -1,0 +1,91 @@
+## 젯슨 나노 셋업 및 개발환경  
+**Jetson Nano Setup & Development Environment**
+
+> **저장 공간**이 1–2 GB 이하이므로 모든 패키지를 **microSD**(이미 마운트 완료) 쪽에 설치하세요.  
+> *Internal eMMC has < 2 GB free; install everything to the mounted **microSD**.*
+
+---
+
+### 필수 하드웨어 체크리스트 (Hardware Checklist)
+- Wi-Fi 동글 *(Wi-Fi dongle)*
+- Dummy HDMI
+- microSD 카드 *(microSD card)*
+
+---
+
+### 원격 데스크톱 설치 (RealVNC Remote Desktop)
+
+```bash
+# 1) VNC Server 다운로드·설치
+wget https://downloads.realvnc.com/download/file/vnc.files/VNC-Server-7.10.0-Linux-ARM64.deb
+sudo apt install ./VNC-Server-7.10.0-Linux-ARM64.deb
+
+# 2) 라이선스 등록
+sudo vnclicensewiz                 # ID: wbfprp@gmail.com / PW: Vnc388700
+
+# 3) 호스트 이름(팀 번호) 설정 예시
+sudo hostnamectl set-hostname nvidia-1   # nvidia-2, nvidia-3 …
+
+# 4) 서비스 영구 활성화
+sudo systemctl enable vncserver-x11-serviced
+sudo systemctl start  vncserver-x11-serviced
+```
+
+---
+
+### Miniforge 설치 (Python 환경)  
+**microSD 내부**에 설치해야 함  
+*Install Miniforge **inside microSD***  
+
+```bash
+cd /mnt/microsd
+bash Miniforge3-Linux-*.sh           # Install to /mnt/microsd/miniforge3
+echo 'export PATH="/mnt/microsd/miniforge3/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# 자동 활성화 안 될 때:
+# source /mnt/microsd/miniforge3/bin/activate
+```
+
+---
+
+### VS Code (선택 Optional)
+
+```bash
+cd /mnt/microsd
+dpkg-deb -xv code_arm64.deb ./vscode           # 압축 해제
+/mnt/microsd/vscode/share/code/code            # 실행 확인
+sudo ln -s /mnt/microsd/vscode/share/code/code /usr/share/code
+alias code='/mnt/microsd/vscode/usr/share/code/code --no-sandbox'
+```
+
+---
+
+### MediaPipe 얼굴 인식 & USB 카메라  
+*MediaPipe Face Detection & USB Camera*
+
+```bash
+pip install mediapipe                # 약 5–10 분
+sudo chmod 777 /dev/ttyTHS1          # UART 권한
+python /mnt/microsd/Stanford_WS/om_centroid.py
+```
+
+---
+
+### Jetson ↔ 로봇 팔 연결 (Wiring & Test)
+
+| Jetson 핀 | 로봇 보드 | 기능 (Function) |
+|-----------|-----------|-----------------|
+| 8 번      | GPIO 19   | TX |
+| 10 번     | GPIO 18   | RX |
+| GND       | GND       | 공통 Ground |
+
+1. **로봇 팔 전원 분리** 후 점퍼선 3 개 연결.  
+2. 전원 재연결 → 조이스틱 **오른쪽 버튼 2 회** 클릭.  
+3. Jetson 터미널에서 실행:
+
+```bash
+python /mnt/microsd/Stanford_WS/om_servoing.py
+```
+
+---
